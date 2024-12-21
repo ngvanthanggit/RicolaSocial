@@ -10,13 +10,21 @@ import (
 	"github.com/ngvanthanggit/RicolaSocial/internal/store"
 )
 
-type config struct {
-	Addr string
-}
-
 type application struct {
 	config config
 	store  store.Storage
+}
+
+type config struct {
+	addr string
+	db   dbConfig
+}
+
+type dbConfig struct {
+	addr         string
+	maxOpenConns int
+	maxIdleConns int
+	maxIdleTime  string
 }
 
 // returning the mux for the server
@@ -40,14 +48,14 @@ func (app *application) mount() http.Handler {
 // run the server and return the error status
 func (app *application) run(mux http.Handler) error {
 	srv := &http.Server{
-		Addr:         app.config.Addr,
+		Addr:         app.config.addr,
 		Handler:      mux,
 		WriteTimeout: 30 * time.Second,
 		ReadTimeout:  10 * time.Second,
 		IdleTimeout:  time.Minute,
 	}
 
-	log.Printf("Server is running at %s", app.config.Addr)
+	log.Printf("Server is running at %s", app.config.addr)
 
 	return srv.ListenAndServe()
 }
