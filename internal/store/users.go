@@ -7,7 +7,7 @@ import (
 
 // User model
 type User struct {
-	ID        string `json:"id"`
+	ID        int64  `json:"id"`
 	Username  string `json:"username"`
 	Email     string `json:"email"`
 	Password  string `json:"-"`
@@ -20,7 +20,7 @@ type UserStore struct {
 
 func (s *UserStore) Create(ctx context.Context, user *User) error {
 	query := `
-		INSERT INTO users (username, password, email)
+		INSERT INTO users (username, email, password)
 		VALUES ($1, $2, $3) 
 		RETURNING id, created_at
 	`
