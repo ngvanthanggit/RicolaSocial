@@ -8,6 +8,8 @@ import (
 	"github.com/ngvanthanggit/RicolaSocial/internal/store"
 )
 
+const version = "0.0.1"
+
 func main() {
 	// setting up the configuration
 	cfg := config{
@@ -18,6 +20,7 @@ func main() {
 			maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 30),
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_CONNS", "15m"),
 		},
+		env: env.GetString("ENV", "development"),
 	}
 
 	// creating a new database
