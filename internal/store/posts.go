@@ -48,7 +48,7 @@ func (s *PostStore) Create(ctx context.Context, post *Post) error {
 	return nil
 }
 
-func (s *PostStore) GetPostById(ctx context.Context, postID int) (*Post, error) {
+func (s *PostStore) GetPostById(ctx context.Context, postID int64) (*Post, error) {
 	query := `SELECT * FROM posts WHERE id=$1`
 	row := s.db.QueryRow(query, postID)
 
@@ -65,7 +65,7 @@ func (s *PostStore) GetPostById(ctx context.Context, postID int) (*Post, error) 
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return nil, ErrNotFound
 		}
 		return nil, err
 	}

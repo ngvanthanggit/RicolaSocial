@@ -1,9 +1,11 @@
 package main
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
+	"strconv"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/ngvanthanggit/RicolaSocial/internal/store"
 )
 
@@ -42,22 +44,29 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("thang")
-	postID := 4
-	ctx := r.Context()
-	post, err := app.store.Posts.GetPostById(ctx, postID)
+	// getting post id from the url
+	postIDParam := chi.URLParam(r, "postID")
+	postID, err := strconv.ParseInt(postIDParam, 10, 64)
 
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	if post == nil {
-		writeJSONError(w, http.StatusNotFound, "post not found!")
+	ctx := r.Context()
+	post, err := app.store.Posts.GetPostById(ctx, int64(postID))
+
+	if err != nil {
+		switch {
+		case errors.Is(err, store.ErrNotFound):
+			writeJSONError(w, http.StatusNotFound, err.Error())
+		default:
+			writeJSONError(w, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 
-	if err := writeJSON(w, http.StatusFound, post); err != nil {
+	if err := writeJSON(w, http.StatusOK, post); err != nil {
 		writeJSONError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
