@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/ngvanthanggit/RicolaSocial/internal/store"
@@ -35,6 +36,28 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := writeJSON(w, http.StatusCreated, post); err != nil {
+		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+}
+
+func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("thang")
+	postID := 4
+	ctx := r.Context()
+	post, err := app.store.Posts.GetPostById(ctx, postID)
+
+	if err != nil {
+		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if post == nil {
+		writeJSONError(w, http.StatusNotFound, "post not found!")
+		return
+	}
+
+	if err := writeJSON(w, http.StatusFound, post); err != nil {
 		writeJSONError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
