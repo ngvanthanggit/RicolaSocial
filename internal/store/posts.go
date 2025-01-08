@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"log"
 
 	"github.com/lib/pq"
 )
@@ -51,7 +52,7 @@ func (s *PostStore) Create(ctx context.Context, post *Post) error {
 
 func (s *PostStore) GetPostById(ctx context.Context, postID int64) (*Post, error) {
 	query := `SELECT * FROM posts WHERE id=$1`
-	row := s.db.QueryRow(query, postID)
+	row := s.db.QueryRowContext(ctx, query, postID)
 
 	var post Post
 	err := row.Scan(
@@ -72,4 +73,28 @@ func (s *PostStore) GetPostById(ctx context.Context, postID int64) (*Post, error
 	}
 
 	return &post, nil
+}
+
+func (s *PostStore) DeletePost(ctx context.Context, postID int64) error {
+	query := `
+		DELETE FROM posts WHERE posts.id = $1;
+	`
+
+	result, err := s.db.ExecContext(ctx, query, postID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrNotFound
+		}
+		return err
+	}
+
+	row, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if row == 0 {
+		return ErrNotFound
+	}
+	log.Printf("%d row(s) affected", row)
+	return nil
 }
