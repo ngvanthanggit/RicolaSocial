@@ -75,7 +75,7 @@ func (s *PostStore) GetPostById(ctx context.Context, postID int64) (*Post, error
 	return &post, nil
 }
 
-func (s *PostStore) DeletePost(ctx context.Context, postID int64) error {
+func (s *PostStore) Delete(ctx context.Context, postID int64) error {
 	query := `
 		DELETE FROM posts WHERE posts.id = $1;
 	`
@@ -96,5 +96,31 @@ func (s *PostStore) DeletePost(ctx context.Context, postID int64) error {
 		return ErrNotFound
 	}
 	log.Printf("%d row(s) affected", row)
+	return nil
+}
+
+func (s *PostStore) Update(ctx context.Context, post *Post) error {
+	query := `
+		UPDATE posts
+		SET title = $1, content = $2, updated_at = NOW()
+		WHERE posts.id = $3;
+	`
+
+	result, err := s.db.ExecContext(ctx, query, post.Title, post.Content, post.ID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrNotFound
+		}
+		return err
+	}
+
+	row, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if row == 0 {
+		return ErrNotFound
+	}
+
 	return nil
 }
