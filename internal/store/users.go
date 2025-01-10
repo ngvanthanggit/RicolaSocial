@@ -31,8 +31,8 @@ func (s *UserStore) Create(ctx context.Context, user *User) error {
 		ctx,
 		query,
 		user.Username,
-		user.Password,
 		user.Email,
+		user.Password,
 	).Scan(
 		&user.ID,
 		&user.CreatedAt,

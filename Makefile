@@ -38,3 +38,7 @@ migrate-version:
 .PHONY: migrate-goto
 migrate-goto:
 	@migrate -path=$(MIGRATIONS_PATH) -database=$(DB_ADDR) goto $(filter-out $@, $(MAKECMDGOALS))
+
+.PHONY: seed
+seed:
+	@go run cmd/migrate/seed/main.go
