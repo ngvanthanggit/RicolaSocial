@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"errors"
 )
 
 // User model
@@ -43,4 +44,38 @@ func (s *UserStore) Create(ctx context.Context, user *User) error {
 	}
 
 	return nil
+}
+
+func (s *UserStore) GetUserById(ctx context.Context, userID int64) (*User, error) {
+	query := `
+		SELECT id, username, email, created_at
+		FROM users
+		WHERE id = $1;
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	var user User
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		userID,
+	).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.CreatedAt,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &user, nil
 }
