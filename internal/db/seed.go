@@ -9,9 +9,9 @@ import (
 	"github.com/ngvanthanggit/RicolaSocial/internal/store"
 )
 
-const numPosts = 100
-const numUsers = 50
-const numComments = 200
+const numPosts = 10
+const numUsers = 5
+const numComments = 20
 
 var titleSample []string = []string{
 	"Boost Your Day!",
