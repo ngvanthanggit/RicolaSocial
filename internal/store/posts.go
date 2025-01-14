@@ -157,6 +157,7 @@ func (s *PostStore) GetUserFeed(ctx context.Context, userID int64, feedQuery Pag
 		WHERE (f.follower_id = $1 OR p.user_id = $1)
 		AND (p.title ILIKE '%' || $4 || '%' OR p.content ILIKE '%' || $4 || '%')
 		AND (p.tags @> $5 OR $5 = '{}')
+		AND (p.created_at >= $6 AND p.created_at <= $7)
 		GROUP BY p.id, u.username
 		ORDER BY p.created_at ` + feedQuery.Sort + `
 		LIMIT $2 OFFSET $3;
@@ -173,6 +174,8 @@ func (s *PostStore) GetUserFeed(ctx context.Context, userID int64, feedQuery Pag
 		feedQuery.Offset,
 		feedQuery.Search,
 		pq.Array(feedQuery.Tags),
+		feedQuery.Since,
+		feedQuery.Until,
 	)
 	if err != nil {
 		return nil, err

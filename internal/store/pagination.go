@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type PaginatedFeedQuery struct {
@@ -60,24 +59,21 @@ func (feedQuery PaginatedFeedQuery) Parse(r *http.Request) (PaginatedFeedQuery, 
 
 	since := urlQuery.Get("since")
 	if since != "" {
-		sinceTime := parseTime(since)
+		sinceTime := parsePostgresTime(since)
+		feedQuery.Since = sinceTime
+	} else {
+		sinceTime := parsePostgresTime(feedQuery.Since)
 		feedQuery.Since = sinceTime
 	}
 
 	until := urlQuery.Get("until")
 	if until != "" {
-		untilTime := parseTime(until)
+		untilTime := parsePostgresTime(until)
+		feedQuery.Until = untilTime
+	} else {
+		untilTime := parsePostgresTime(feedQuery.Until)
 		feedQuery.Until = untilTime
 	}
 
 	return feedQuery, nil
-}
-
-func parseTime(s string) string {
-	t, err := time.Parse(time.DateTime, s)
-	if err != nil {
-		return ""
-	}
-
-	return t.Format(time.DateTime)
 }
