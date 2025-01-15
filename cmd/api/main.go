@@ -40,6 +40,11 @@ func main() {
 	// creating a new storage with the created database
 	store := store.NewStorage(db)
 
+	// timing setup
+	if err = store.DBTime.DBTimeSetup(); err != nil {
+		log.Panic(err)
+	}
+
 	// initialisation the application
 	app := application{
 		config: cfg,

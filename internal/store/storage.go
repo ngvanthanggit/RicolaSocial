@@ -35,6 +35,7 @@ type Storage struct {
 	}
 	DBTime interface {
 		GetDBTimeZone() (string, error)
+		DBTimeSetup() error
 	}
 }
 
