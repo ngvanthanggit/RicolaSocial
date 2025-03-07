@@ -11,7 +11,7 @@ This is a backend project for a social media.
 
 Thang Nguyen Van - [@ngvanthangig](https://www.instagram.com/ngvanthangig/) - thangitcbg@gmail.com
 
-Project Link: [https://github.com/ngvanthanggit/FriendStardi](https://github.com/ngvanthanggit/FriendStardi)
+Project Link: [https://github.com/ngvanthanggit/RicolaSocial](https://github.com/ngvanthanggit/RicolaSocial)
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 [Go.dev]: https://img.shields.io/badge/Go-00ADD8?logo=Go&logoColor=white&style=for-the-badge
