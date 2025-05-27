@@ -19,7 +19,6 @@ type Post struct {
 	UpdatedAt string    `json:"updated_at"`
 	Version   int       `json:"version"`
 	Comments  []Comment `json:"comments"`
-	User      User      `json:"user"`
 }
 
 type PostWithMetaData struct {
@@ -149,10 +148,10 @@ func (s *PostStore) Update(ctx context.Context, post *Post) error {
 
 func (s *PostStore) GetUserFeed(ctx context.Context, userID int64, feedQuery PaginatedFeedQuery) ([]PostWithMetaData, error) {
 	query := `
-		SELECT p.id, p.user_id, u.username, p.title, p.content, p.created_at, p.version, p.tags, COUNT(c.id) AS comments_count
+		SELECT p.id, p.user_id, p.title, p.content, p.created_at, p.version, p.tags, COUNT(c.id) AS comments_count
 		FROM posts p
 		LEFT JOIN comments c ON c.user_id = p.user_id
-		LEFT JOIN followers f ON f.user_id = p.user_id OR p.user_id = $1
+		LEFT JOIN followers f ON f.user_id = p.user_id
 		JOIN users u ON p.user_id = u.id
 		WHERE (f.follower_id = $1 OR p.user_id = $1)
 		AND (p.title ILIKE '%' || $4 || '%' OR p.content ILIKE '%' || $4 || '%')
@@ -188,7 +187,6 @@ func (s *PostStore) GetUserFeed(ctx context.Context, userID int64, feedQuery Pag
 		err := rows.Scan(
 			&post.ID,
 			&post.UserID,
-			&post.User.Username,
 			&post.Title,
 			&post.Content,
 			&post.CreatedAt,
@@ -199,7 +197,6 @@ func (s *PostStore) GetUserFeed(ctx context.Context, userID int64, feedQuery Pag
 		if err != nil {
 			return nil, err
 		}
-		post.User.ID = post.UserID
 		feed = append(feed, post)
 	}
 

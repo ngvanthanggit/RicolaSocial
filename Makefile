@@ -5,8 +5,8 @@ MIGRATIONS_PATH = ./cmd/migrate/migrations
 .PHONY: migrate-create
 migration:
 	@migrate create -seq -ext sql -dir $(MIGRATIONS_PATH) $(filter-out $@, $(MAKECMDGOALS))
-.PHONY: migrate-up
 
+.PHONY: migrate-up
 migrate-up:
 	@if [ -z "$(filter-out $@, $(MAKECMDGOALS))" ]; then \
 		migrate -path=$(MIGRATIONS_PATH) -database=$(DB_ADDR) up; \
@@ -37,6 +37,9 @@ migrate-version:
 
 .PHONY: migrate-goto
 migrate-goto:
+	@if [ -z "$(filter-out $@, $(MAKECMDGOALS))" ]; then echo "Error: VERSION is required. Try to run: make migrate-goto VERSION";\
+	exit 1; \
+	fi
 	@migrate -path=$(MIGRATIONS_PATH) -database=$(DB_ADDR) goto $(filter-out $@, $(MAKECMDGOALS))
 
 .PHONY: seed

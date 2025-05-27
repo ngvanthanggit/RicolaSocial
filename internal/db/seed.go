@@ -12,6 +12,7 @@ import (
 const numPosts = 1000
 const numUsers = 500
 const numComments = 300000
+const numFollowers = 2000
 
 var titleSample []string = []string{
 	"Boost Your Day!",
@@ -87,31 +88,55 @@ var usernameSample []string = []string{
 // handler for generating new data for users, posts, comments
 func SeedHandler(store store.Storage) {
 	ctx := context.Background()
-
-	// generate users
-	users := generateUsers()
-	for _, user := range users {
-		if err := store.Users.Create(ctx, user); err != nil {
-			log.Println("Error creating user:", err)
-			return
+	/*
+		// generate users
+		users := generateUsers()
+		for _, user := range users {
+			if err := store.Users.Create(ctx, user); err != nil {
+				log.Println("Error creating user:", err)
+				return
+			}
 		}
-	}
 
-	// generate posts
-	posts := generatePosts(users)
-	for _, post := range posts {
-		if err := store.Posts.Create(ctx, post); err != nil {
-			log.Println("Error creating post:", err)
-			return
+		// generate posts
+		posts := generatePosts(users)
+		for _, post := range posts {
+			if err := store.Posts.Create(ctx, post); err != nil {
+				log.Println("Error creating post:", err)
+				return
+			}
 		}
-	}
 
-	//generate comments
-	comments := generateComments(users, posts)
-	for _, comment := range comments {
-		if err := store.Comments.Create(ctx, comment); err != nil {
-			log.Println("Error creating comment:", err)
-			return
+		//generate comments
+		comments := generateComments(users, posts)
+		for _, comment := range comments {
+			if err := store.Comments.Create(ctx, comment); err != nil {
+				log.Println("Error creating comment:", err)
+				return
+			}
+		} */
+
+	// generate followers
+
+	type Pair struct {
+		First  int64
+		Second int64
+	}
+	mp := make(map[Pair]bool)
+	for i := 0; i < numFollowers; i++ {
+		for {
+			followerID := 1 + rand.Int63n(600)
+			userID := 1 + rand.Int63n(600)
+			if mp[Pair{followerID, userID}] {
+				continue
+			}
+			mp[Pair{followerID, userID}] = true
+
+			if err := store.Followers.Follow(ctx, followerID, userID); err != nil {
+				log.Println("Error creating followers:", err)
+				return
+			}
+			break
 		}
 	}
 
