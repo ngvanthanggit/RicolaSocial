@@ -1,11 +1,10 @@
 package main
 
 import (
-	"log"
-
 	"github.com/ngvanthanggit/RicolaSocial/internal/db"
 	"github.com/ngvanthanggit/RicolaSocial/internal/env"
 	"github.com/ngvanthanggit/RicolaSocial/internal/store"
+	"go.uber.org/zap"
 )
 
 const version = "0.0.1"
@@ -40,6 +39,10 @@ func main() {
 		env: env.GetString("ENV", "development"),
 	}
 
+	// logger
+	logger := zap.Must(zap.NewProduction()).Sugar()
+	defer logger.Sync()
+
 	// creating a new database
 	db, err := db.New(
 		cfg.db.addr,
@@ -48,27 +51,28 @@ func main() {
 		cfg.db.maxIdleTime,
 	)
 	if err != nil {
-		log.Panic(err)
+		logger.Fatal(err)
 	}
 	defer db.Close()
 
-	log.Println("database connection pool established")
+	logger.Info("database connection pool established")
 
 	// creating a new storage with the created database
 	store := store.NewStorage(db)
 
 	// timing setup
 	if err = store.DBTime.DBTimeSetup(); err != nil {
-		log.Panic(err)
+		logger.Fatal(err)
 	}
 
 	// initialisation the application
 	app := application{
 		config: cfg,
 		store:  store,
+		logger: logger,
 	}
 
 	mux := app.mount()
 
-	log.Fatal(app.run(mux))
+	logger.Fatal(app.run(mux))
 }
