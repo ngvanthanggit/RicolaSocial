@@ -151,7 +151,6 @@ func generateUsers() []*store.User {
 		users[i] = &store.User{
 			Username: username,
 			Email:    username + "@example.com",
-			Password: "12345",
 		}
 	}
 
