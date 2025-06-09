@@ -1,8 +1,11 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/ngvanthanggit/RicolaSocial/internal/store"
 )
 
@@ -13,6 +16,7 @@ type RegisterUserPayload struct {
 }
 
 // registerUserHandler godoc
+//
 //	@Summary		Register a user
 //	@Description	Register a new user with username, email and password
 //	@Tags			authentication
@@ -47,7 +51,27 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	ctx := r.Context()
+
+	// create new plain token
+	plainToken := uuid.New().String()
+	// store token into database
+	hash := sha256.Sum256([]byte(plainToken))
+	hashedToken := hex.EncodeToString(hash[:])
+
 	// store user
+	err := app.store.Users.CreateAndInvite(ctx, new_user, hashedToken, app.config.mail.exp)
+	if err != nil {
+		switch err {
+		case store.ErrDuplicateEmail:
+			app.badRequestResponse(w, r, err)
+		case store.ErrDuplicateUsername:
+			app.badRequestResponse(w, r, err)
+		default:
+			app.internalServerResponse(w, r, err)
+		}
+		return
+	}
 
 	if err := app.jsonResponse(w, http.StatusCreated, nil); err != nil {
 		app.internalServerResponse(w, r, err)

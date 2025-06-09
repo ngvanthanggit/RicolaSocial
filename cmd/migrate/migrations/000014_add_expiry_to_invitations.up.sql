@@ -1,0 +1,2 @@
+ALTER TABLE user_invitations
+ADD expiry TIMESTAMP(0) WITH TIME ZONE NOT NULL;

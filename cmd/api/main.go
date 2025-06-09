@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/ngvanthanggit/RicolaSocial/internal/db"
 	"github.com/ngvanthanggit/RicolaSocial/internal/env"
 	"github.com/ngvanthanggit/RicolaSocial/internal/store"
@@ -37,6 +39,9 @@ func main() {
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_CONNS", "15m"),
 		},
 		env: env.GetString("ENV", "development"),
+		mail: mailConfig{
+			exp: time.Hour * 2, // 2 hours
+		},
 	}
 
 	// logger
