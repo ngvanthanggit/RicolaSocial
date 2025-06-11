@@ -119,7 +119,7 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// UnfollowUser gdoc
+// UnfollowUser godoc
 //
 //	@Summary		Unfollow a user
 //	@Description	Unfollow a user by ID
@@ -156,5 +156,34 @@ func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Reque
 	if err := app.jsonResponse(w, http.StatusNoContent, nil); err != nil {
 		app.internalServerResponse(w, r, err)
 		return
+	}
+}
+
+// ActivateUserHandler godoc
+//
+//	@Summary		Activate a User
+//	@Description	Activate a User by token
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Param			token	path	string	true	"Token"
+//	@Security		ApiKeyAuth
+//	@Router			/users/activate/{token} [put]
+func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
+	// get the token from the URL
+	token := chi.URLParam(r, "token")
+
+	// find the token inside user_invitations db
+	if err := app.store.Users.Activate(r.Context(), token); err != nil {
+		switch err {
+		case store.ErrNotFound:
+			app.badRequestResponse(w, r, err)
+		default:
+			app.internalServerResponse(w, r, err)
+		}
+		return
+	}
+	if err := app.jsonResponse(w, http.StatusNoContent, nil); err != nil {
+		app.internalServerResponse(w, r, err)
 	}
 }

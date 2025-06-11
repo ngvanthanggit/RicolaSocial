@@ -12,6 +12,8 @@ import (
 var (
 	ErrDuplicateEmail    = errors.New("the email already exists")
 	ErrDuplicateUsername = errors.New("the username already exists")
+	ErrTokenExpired      = errors.New("the token has already expired")
+	ErrUserActivated     = errors.New("the user has already been activated")
 )
 
 // User model
@@ -59,7 +61,7 @@ func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 		query,
 		user.Username,
 		user.Email,
-		user.Password,
+		user.Password.hash,
 	).Scan(
 		&user.ID,
 		&user.CreatedAt,
@@ -129,6 +131,27 @@ func (s *UserStore) CreateAndInvite(ctx context.Context, user *User, token strin
 	})
 }
 
+func (s *UserStore) Activate(ctx context.Context, token string) error {
+	// as this includes multiple steps of updating db -> transaction
+	return withTx(s.db, ctx, func(tx *sql.Tx) error {
+		// - find the user with this token
+		user, err := s.getUserFromInvitation(ctx, tx, token)
+		if err != nil {
+			return err
+		}
+		// - update the user (active status)
+		if err := s.updateActiveStatus(ctx, tx, user); err != nil {
+			return err
+		}
+		// - remove the token from db
+		if err := s.deleteInvitation(ctx, tx, token); err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
 func (s *UserStore) createUserInvitation(ctx context.Context, tx *sql.Tx, token string, invitationExp time.Duration, userID int64) error {
 	query := `
 		INSERT INTO user_invitations (token, user_id, expiry) VALUES ($1, $2, $3)
@@ -140,6 +163,91 @@ func (s *UserStore) createUserInvitation(ctx context.Context, tx *sql.Tx, token 
 	_, err := tx.ExecContext(ctx, query, token, userID, time.Now().Add(invitationExp))
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (s *UserStore) getUserFromInvitation(ctx context.Context, tx *sql.Tx, token string) (*User, error) {
+	query := `
+		SELECT i.user_id, u.username, u.email, u.is_activate, i.expiry
+		FROM user_invitations i
+		JOIN users u ON i.user_id = u.id
+		WHERE token = $1;
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	row := tx.QueryRowContext(ctx, query, token)
+	var user User
+	var is_active bool
+	var queryExp time.Time
+	if err := row.Scan(&user.ID, &user.Username, &user.Email, &is_active, &queryExp); err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrNotFound
+		default:
+			return nil, err
+		}
+	}
+	// user is activated
+	if is_active {
+		return nil, ErrUserActivated
+	}
+	// the token is expired
+	if time.Now().After(queryExp) {
+		return nil, ErrTokenExpired
+	}
+
+	return &user, nil
+}
+
+func (s *UserStore) updateActiveStatus(ctx context.Context, tx *sql.Tx, user *User) error {
+	query := `
+		UPDATE users
+		SET is_activate=TRUE
+		WHERE id=$1
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	res, err := tx.ExecContext(ctx, query, user.ID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+func (s *UserStore) deleteInvitation(ctx context.Context, tx *sql.Tx, token string) error {
+	query := `
+		DELETE FROM user_invitations WHERE token=$1
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	res, err := tx.ExecContext(ctx, query, token)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrNotFound
 	}
 
 	return nil

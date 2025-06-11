@@ -285,6 +285,36 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/activate/{token}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Activate a User by token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Activate a User",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/users/feed": {
             "get": {
                 "security": [

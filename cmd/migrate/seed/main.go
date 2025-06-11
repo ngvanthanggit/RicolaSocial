@@ -21,5 +21,5 @@ func main() {
 
 	store := store.NewStorage(conn)
 
-	db.SeedHandler(store)
+	db.SeedHandler(store, conn)
 }

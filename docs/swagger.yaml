@@ -393,6 +393,25 @@ paths:
       summary: Unfollow a user
       tags:
       - users
+  /users/activate/{token}:
+    put:
+      consumes:
+      - application/json
+      description: Activate a User by token
+      parameters:
+      - description: Token
+        in: path
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Activate a User
+      tags:
+      - users
   /users/feed:
     get:
       consumes:

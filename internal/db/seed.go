@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"math/rand"
@@ -86,18 +87,27 @@ var usernameSample []string = []string{
 }
 
 // handler for generating new data for users, posts, comments
-func SeedHandler(store store.Storage) {
+func SeedHandler(store store.Storage, db *sql.DB) {
 	ctx := context.Background()
-	/*
-		// generate users
-		users := generateUsers()
-		for _, user := range users {
-			if err := store.Users.Create(ctx, user); err != nil {
-				log.Println("Error creating user:", err)
-				return
-			}
-		}
+	tx, err := db.BeginTx(ctx, nil)
 
+	if err != nil {
+		log.Println("Cannot open the transaction")
+		return
+	}
+
+	// generate users
+	users := generateUsers()
+	for _, user := range users {
+		if err := store.Users.Create(ctx, tx, user); err != nil {
+			log.Println("Error creating user:", err)
+			_ = tx.Rollback()
+			return
+		}
+	}
+
+	tx.Commit()
+	/*
 		// generate posts
 		posts := generatePosts(users)
 		for _, post := range posts {
