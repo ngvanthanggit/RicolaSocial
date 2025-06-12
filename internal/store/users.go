@@ -2,7 +2,9 @@ package store
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"time"
 
@@ -23,6 +25,7 @@ type User struct {
 	Email     string   `json:"email"`
 	Password  password `json:"-"`
 	CreatedAt string   `json:"created_at"`
+	IsActive  bool     `json:"is_active"`
 }
 
 type password struct {
@@ -140,7 +143,8 @@ func (s *UserStore) Activate(ctx context.Context, token string) error {
 			return err
 		}
 		// - update the user (active status)
-		if err := s.updateActiveStatus(ctx, tx, user); err != nil {
+		user.IsActive = true
+		if err := s.update(ctx, tx, user); err != nil {
 			return err
 		}
 		// - remove the token from db
@@ -170,7 +174,7 @@ func (s *UserStore) createUserInvitation(ctx context.Context, tx *sql.Tx, token 
 
 func (s *UserStore) getUserFromInvitation(ctx context.Context, tx *sql.Tx, token string) (*User, error) {
 	query := `
-		SELECT i.user_id, u.username, u.email, u.is_activate, i.expiry
+		SELECT i.user_id, u.username, u.email, u.created_at, u.is_active, i.expiry
 		FROM user_invitations i
 		JOIN users u ON i.user_id = u.id
 		WHERE token = $1;
@@ -179,11 +183,21 @@ func (s *UserStore) getUserFromInvitation(ctx context.Context, tx *sql.Tx, token
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
-	row := tx.QueryRowContext(ctx, query, token)
+	hash := sha256.Sum256([]byte(token))
+	hashToken := hex.EncodeToString(hash[:])
+
+	row := tx.QueryRowContext(ctx, query, hashToken)
 	var user User
-	var is_active bool
 	var queryExp time.Time
-	if err := row.Scan(&user.ID, &user.Username, &user.Email, &is_active, &queryExp); err != nil {
+	err := row.Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.CreatedAt,
+		&user.IsActive,
+		&queryExp,
+	)
+	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrNotFound
@@ -192,7 +206,7 @@ func (s *UserStore) getUserFromInvitation(ctx context.Context, tx *sql.Tx, token
 		}
 	}
 	// user is activated
-	if is_active {
+	if user.IsActive {
 		return nil, ErrUserActivated
 	}
 	// the token is expired
@@ -203,21 +217,20 @@ func (s *UserStore) getUserFromInvitation(ctx context.Context, tx *sql.Tx, token
 	return &user, nil
 }
 
-func (s *UserStore) updateActiveStatus(ctx context.Context, tx *sql.Tx, user *User) error {
+func (s *UserStore) update(ctx context.Context, tx *sql.Tx, user *User) error {
 	query := `
 		UPDATE users
-		SET is_activate=TRUE
+		SET username=$2, email=$3, created_at=$4, is_active=$5
 		WHERE id=$1
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
-	res, err := tx.ExecContext(ctx, query, user.ID)
+	res, err := tx.ExecContext(ctx, query, user.ID, user.Username, user.Email, user.CreatedAt, user.IsActive)
 	if err != nil {
 		return err
 	}
-
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
 		return err
@@ -225,7 +238,6 @@ func (s *UserStore) updateActiveStatus(ctx context.Context, tx *sql.Tx, user *Us
 	if rowsAffected == 0 {
 		return ErrNotFound
 	}
-
 	return nil
 }
 
@@ -237,7 +249,10 @@ func (s *UserStore) deleteInvitation(ctx context.Context, tx *sql.Tx, token stri
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
-	res, err := tx.ExecContext(ctx, query, token)
+	hash := sha256.Sum256([]byte(token))
+	hashToken := hex.EncodeToString(hash[:])
+
+	res, err := tx.ExecContext(ctx, query, hashToken)
 	if err != nil {
 		return err
 	}
