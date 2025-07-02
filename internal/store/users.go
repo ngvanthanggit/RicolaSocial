@@ -84,6 +84,20 @@ func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 	return nil
 }
 
+func (s *UserStore) Delete(ctx context.Context, userID int64) error {
+	return withTx(s.db, ctx, func(tx *sql.Tx) error {
+		if err := s.delete(ctx, tx, userID); err != nil {
+			return err
+		}
+
+		if err := s.deleteUserInvitations(ctx, tx, userID); err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
 func (s *UserStore) GetUserById(ctx context.Context, userID int64) (*User, error) {
 	query := `
 		SELECT id, username, email, password, created_at
@@ -241,6 +255,30 @@ func (s *UserStore) update(ctx context.Context, tx *sql.Tx, user *User) error {
 	return nil
 }
 
+func (s *UserStore) delete(ctx context.Context, tx *sql.Tx, userID int64) error {
+	query := `
+		DELETE FROM users WHERE id=$1
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	res, err := tx.ExecContext(ctx, query, userID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
 func (s *UserStore) deleteInvitation(ctx context.Context, tx *sql.Tx, token string) error {
 	query := `
 		DELETE FROM user_invitations WHERE token=$1
@@ -253,6 +291,30 @@ func (s *UserStore) deleteInvitation(ctx context.Context, tx *sql.Tx, token stri
 	hashToken := hex.EncodeToString(hash[:])
 
 	res, err := tx.ExecContext(ctx, query, hashToken)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+func (s *UserStore) deleteUserInvitations(ctx context.Context, tx *sql.Tx, userID int64) error {
+	query := `
+		DELETE FROM user_invitations WHERE user_id=$1
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	res, err := tx.ExecContext(ctx, query, userID)
 	if err != nil {
 		return err
 	}

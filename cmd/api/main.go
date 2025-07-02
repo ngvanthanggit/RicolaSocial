@@ -5,6 +5,7 @@ import (
 
 	"github.com/ngvanthanggit/RicolaSocial/internal/db"
 	"github.com/ngvanthanggit/RicolaSocial/internal/env"
+	"github.com/ngvanthanggit/RicolaSocial/internal/mailer"
 	"github.com/ngvanthanggit/RicolaSocial/internal/store"
 	"go.uber.org/zap"
 )
@@ -30,8 +31,9 @@ const version = "0.0.1"
 func main() {
 	// setting up the configuration
 	cfg := config{
-		addr:   env.GetString("ADDR", ":8080"),
-		apiURL: env.GetString("EXTERNAL_URL", "localhost:8080"),
+		addr:        env.GetString("ADDR", ":8080"),
+		apiURL:      env.GetString("EXTERNAL_URL", "localhost:8080"),
+		frontendURl: env.GetString("FRONTEND_URL", "localhost:4000"),
 		db: dbConfig{
 			addr:         env.GetString("DB_ADDR", "postgres://thangitcbg:thangitcbg@localhost:5433/socialnetwork?sslmode=disable"),
 			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 30),
@@ -40,6 +42,10 @@ func main() {
 		},
 		env: env.GetString("ENV", "development"),
 		mail: mailConfig{
+			fromEmail: env.GetString("SENDGRID_FROM_EMAIL", ""),
+			sendGrid: sendGridConfig{
+				apiKey: env.GetString("SENDGRID_API_KEY", ""),
+			},
 			exp: time.Hour * 2, // 2 hours
 		},
 	}
@@ -70,11 +76,14 @@ func main() {
 		logger.Fatal(err)
 	}
 
+	mailer := mailer.NewSendgrid(cfg.mail.fromEmail, cfg.mail.sendGrid.apiKey)
+
 	// initialisation the application
 	app := application{
 		config: cfg,
 		store:  store,
 		logger: logger,
+		mailer: mailer,
 	}
 
 	mux := app.mount()

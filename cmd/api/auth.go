@@ -3,9 +3,11 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/ngvanthanggit/RicolaSocial/internal/mailer"
 	"github.com/ngvanthanggit/RicolaSocial/internal/store"
 )
 
@@ -79,6 +81,29 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	// send email
+	isProdEnv := app.config.env == "production"
+
+	activationURL := fmt.Sprintf("%s/confirm/%s", app.config.frontendURl, plainToken)
+	vars := struct {
+		Username      string
+		ActivationURL string
+	}{
+		Username:      new_user.Username,
+		ActivationURL: activationURL,
+	}
+
+	err = app.mailer.Send(mailer.UserInvitationTemplate, new_user.Username, new_user.Email, vars, !isProdEnv)
+	if err != nil {
+		app.logger.Errorw("error sending invitation email", "error", err)
+
+		// roll back user creation if failed to send email (SAGA pattern)
+		if err := app.store.Users.Delete(ctx, new_user.ID); err != nil {
+			app.logger.Errorw("error deletign user", "error", err)
+		}
+
+		app.internalServerResponse(w, r, err)
+		return
+	}
 
 	userWithToken := &UserWithToken{
 		User:  new_user,
