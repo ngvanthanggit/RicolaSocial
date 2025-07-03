@@ -14,7 +14,10 @@ require (
 	golang.org/x/crypto v0.38.0
 )
 
-require github.com/sendgrid/rest v2.6.9+incompatible // indirect
+require (
+	github.com/go-chi/cors v1.2.2 // indirect
+	github.com/sendgrid/rest v2.6.9+incompatible // indirect
+)
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect

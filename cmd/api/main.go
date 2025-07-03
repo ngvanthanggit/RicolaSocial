@@ -33,7 +33,7 @@ func main() {
 	cfg := config{
 		addr:        env.GetString("ADDR", ":8080"),
 		apiURL:      env.GetString("EXTERNAL_URL", "localhost:8080"),
-		frontendURl: env.GetString("FRONTEND_URL", "localhost:4000"),
+		frontendURl: env.GetString("FRONTEND_URL", "localhost:5173"),
 		db: dbConfig{
 			addr:         env.GetString("DB_ADDR", "postgres://thangitcbg:thangitcbg@localhost:5433/socialnetwork?sslmode=disable"),
 			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 30),
