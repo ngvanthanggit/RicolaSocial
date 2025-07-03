@@ -183,7 +183,7 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 		}
 		return
 	}
-	if err := app.jsonResponse(w, http.StatusNoContent, nil); err != nil {
+	if err := app.jsonResponse(w, http.StatusOK, nil); err != nil {
 		app.internalServerResponse(w, r, err)
 	}
 }
