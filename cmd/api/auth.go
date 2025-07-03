@@ -92,7 +92,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		ActivationURL: activationURL,
 	}
 
-	err = app.mailer.Send(mailer.UserInvitationTemplate, new_user.Username, new_user.Email, vars, !isProdEnv)
+	status, err := app.mailer.Send(mailer.UserInvitationTemplate, new_user.Username, new_user.Email, vars, !isProdEnv)
 	if err != nil {
 		app.logger.Errorw("error sending invitation email", "error", err)
 
@@ -104,6 +104,8 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		app.internalServerResponse(w, r, err)
 		return
 	}
+
+	app.logger.Infof("Email sent with status code %d", status)
 
 	userWithToken := &UserWithToken{
 		User:  new_user,
