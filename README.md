@@ -3,6 +3,11 @@
 ## About The Project
 This is a backend project for a social media.
 
+## Details
+### Structure Diagram
+<img width="1532" height="608" alt="diagram-export-15-12-2025-01_36_33" src="https://github.com/user-attachments/assets/6b8d7315-b747-421a-a269-158a27a45417" />
+
+
 ## Built With
 * [![Go][Go.dev]][Go-url]
 * [![Docker][Docker.com]][Docker-url]
