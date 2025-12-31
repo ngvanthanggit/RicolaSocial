@@ -48,6 +48,12 @@ func main() {
 			},
 			exp: time.Hour * 2, // 2 hours
 		},
+		auth: authConfig{
+			basic: basicConfig{
+				user: env.GetString("AUTH_BASIC_USER", "admin"),
+				pass: env.GetString("AUTH_BASIC_PASS", "admin"),
+			},
+		},
 	}
 
 	// logger
