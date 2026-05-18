@@ -5,7 +5,7 @@ This is a backend project for a social media.
 
 ## Details
 ### Structure Diagram
-<img width="1532" height="608" alt="diagram-export-15-12-2025-01_36_33" src="https://github.com/user-attachments/assets/6b8d7315-b747-421a-a269-158a27a45417" />
+<img width="2123" height="1747" alt="image (1)" src="https://github.com/user-attachments/assets/aeddc6c2-8158-4903-a2b9-ef45cb6c211d" />
 
 
 ## Built With
